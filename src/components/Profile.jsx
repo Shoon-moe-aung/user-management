@@ -1,7 +1,6 @@
 import { useUser } from '../context/UserProvider'
 import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import defaultAvatar from '../assets/profile.jpg'
 
 export default function Profile() {
   const { user, logout } = useUser()
@@ -12,7 +11,7 @@ export default function Profile() {
   const [hasImage, setHasImage] = useState(false)
   const fileInputRef = useRef(null)
   const API_URL = import.meta.env.VITE_API_URL
-  console.log(`URL => ${API_URL}`)
+  const PROFILE_IMAGE_UPLOAD_URL = 'http://localhost:3001/api/user/profile/image'
 
   async function onUpdateImage() {
     const file = fileInputRef.current?.files[0]
@@ -20,22 +19,47 @@ export default function Profile() {
       alert('Please select a file.')
       return
     }
-    const formData = new FormData()
-    formData.append('file', file)
+
+    if (!file.type || !file.type.startsWith('image/')) {
+      alert('Only image files are allowed.')
+      return
+    }
+
+    let uploadFile = file
+    if (file.type === 'image/jpg') {
+      uploadFile = new File([file], file.name, { type: 'image/jpeg' })
+    }
+
+    const fd = new FormData()
+    fd.append('file', uploadFile)
+    fd.append('image', uploadFile)
+    fd.append('profileImage', uploadFile)
+
     try {
-      const response = await fetch(`${API_URL}/api/user/profile/image`, {
+      const response = await fetch(PROFILE_IMAGE_UPLOAD_URL, {
         method: 'POST',
-        body: formData,
+        body: fd,
         credentials: 'include',
       })
+
       if (response.ok) {
         alert('Image updated successfully.')
+        if (fileInputRef.current) fileInputRef.current.value = ''
         fetchProfile()
       } else {
-        alert('Failed to update image.')
+        if (response.status === 401) {
+          logout()
+          return
+        }
+        const payload = await response.json().catch(async () => {
+          const text = await response.text().catch(() => '')
+          return { message: text }
+        })
+        const message = payload?.message?.trim() || 'Failed to update image.'
+        alert(`Upload failed (${response.status}): ${message}`)
       }
-    } catch (err) {
-      alert('Error uploading image.')
+    } catch {
+      alert(`Error uploading image. Check backend at ${API_URL}.`)
     }
   }
 
@@ -43,24 +67,27 @@ export default function Profile() {
     const result = await fetch(`${API_URL}/api/user/profile`, {
       credentials: 'include',
     })
-    if (result.status == 401) {
+
+    if (result.status === 401) {
       logout()
-    } else {
-      const data = await result.json()
-      if (data.profileImage != null) {
-        console.log('has image...')
-        setHasImage(true)
-      }
-      console.log('data: ', data)
-      setIsLoading(false)
-      setData(data)
-      setEditForm({
-        firstname: data.firstname ?? '',
-        lastname: data.lastname ?? '',
-        email: data.email ?? '',
-        username: data.username ?? '',
-      })
+      return
     }
+
+    if (!result.ok) {
+      setIsLoading(false)
+      alert('Failed to load profile.')
+      return
+    }
+
+    const data = await result.json()
+    setHasImage(Boolean(data.profileImage))
+    setIsLoading(false)
+    setData(data)
+    setEditForm({
+      firstname: data.firstname ?? '',
+      lastname: data.lastname ?? '',
+      email: data.email ?? '',
+    })
   }
 
   useEffect(() => {
@@ -76,6 +103,7 @@ export default function Profile() {
 
   const saveProfile = async () => {
     if (!editForm || !data?._id) return
+
     try {
       const response = await fetch(`${API_URL}/api/user/${data._id}`, {
         method: 'PATCH',
@@ -85,14 +113,16 @@ export default function Profile() {
         credentials: 'include',
         body: JSON.stringify(editForm),
       })
+
       if (!response.ok) {
-        alert('Failed to update profile.')
+        const payload = await response.json().catch(() => null)
+        alert(payload?.message ?? 'Failed to update profile.')
         return
       }
-      const updated = await response.json()
-      setData((prev) => ({ ...prev, ...(updated || editForm) }))
+
+      setData((prev) => ({ ...prev, ...editForm }))
       setIsEditing(false)
-    } catch (err) {
+    } catch {
       alert('Error updating profile.')
     }
   }
@@ -141,7 +171,9 @@ export default function Profile() {
                     alt="Profile"
                   />
                 ) : (
-                  <img src={defaultAvatar} alt="Default profile" />
+                  <div className="profile__avatar-placeholder">
+                    No image uploaded
+                  </div>
                 )}
               </div>
               <div className="profile__meta">
@@ -155,6 +187,7 @@ export default function Profile() {
                   id="profileImage"
                   name="profileImage"
                   ref={fileInputRef}
+                  accept="image/*"
                 />
                 <button className="primary" onClick={onUpdateImage}>
                   Update Image
@@ -185,14 +218,6 @@ export default function Profile() {
                       placeholder=" "
                     />
                     <span>Last name</span>
-                  </label>
-                  <label className="float-field">
-                    <input
-                      value={editForm?.username ?? ''}
-                      onChange={handleEditChange('username')}
-                      placeholder=" "
-                    />
-                    <span>Username</span>
                   </label>
                   <label className="float-field">
                     <input
@@ -228,10 +253,6 @@ export default function Profile() {
                   <div className="profile__detail">
                     <span>Last Name</span>
                     <strong>{data.lastname}</strong>
-                  </div>
-                  <div className="profile__detail">
-                    <span>Username</span>
-                    <strong>{data.username ?? '—'}</strong>
                   </div>
                   <button className="ghost" onClick={() => setIsEditing(true)}>
                     Edit Profile

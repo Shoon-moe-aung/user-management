@@ -1,11 +1,11 @@
 import { useUser } from '../context/UserProvider'
-import Login from './Login'
+import { Navigate } from 'react-router-dom'
 
 const RequireAuth = ({ children }) => {
   const { user } = useUser()
 
   if (!user?.isLoggedIn) {
-    return <Login />
+    return <Navigate to="/login" replace />
   }
 
   return children

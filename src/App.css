@@ -349,6 +349,21 @@
   border: 2px solid var(--accent-soft);
 }
 
+.profile__avatar-placeholder {
+  width: 150px;
+  height: 150px;
+  border-radius: 20px;
+  border: 2px dashed var(--border);
+  background: #f8f8f8;
+  color: var(--ink-soft);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 10px;
+}
+
 .profile__meta h3 {
   margin: 0;
 }
