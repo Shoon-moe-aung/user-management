@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useUser } from '../context/UserProvider'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Link } from 'react-router-dom'
 
 export default function Login() {
   const [controlState, setControlState] = useState({
@@ -65,6 +65,9 @@ export default function Login() {
           </button>
           {controlState.isLoginError && <div className="alert">Login incorrect</div>}
           {user.isLoggedIn && <div className="alert">Login Success</div>}
+          <p className="auth-switch">
+            Need an account? <Link to="/signup">Sign up</Link>
+          </p>
         </div>
       </div>
     )

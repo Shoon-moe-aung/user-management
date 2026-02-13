@@ -425,6 +425,27 @@
   gap: 14px;
 }
 
+.auth-switch {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.auth-switch a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.alert--success {
+  background: #e7f6ea;
+  color: #2c6b3c;
+}
+
 button {
   border: none;
   border-radius: 999px;

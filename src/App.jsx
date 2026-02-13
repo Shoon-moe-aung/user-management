@@ -5,12 +5,14 @@ import Profile from './components/Profile'
 import UserManagement from './components/UserManagement'
 import Login from './auth/Login'
 import Logout from './components/Logout'
+import Signup from './auth/Signup'
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/profile" replace />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route
         path="/profile"
         element={

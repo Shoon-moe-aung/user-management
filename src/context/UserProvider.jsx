@@ -49,8 +49,40 @@ export function UserProvider({ children }) {
     localStorage.setItem('session', JSON.stringify(newUser))
   }
 
+  const signup = async ({ username, email, password, firstname, lastname }) => {
+    try {
+      const result = await fetch(`${API_URL}/api/user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          firstname,
+          lastname,
+        }),
+      })
+
+      const payload = await result.json().catch(() => null)
+
+      if (!result.ok) {
+        return {
+          ok: false,
+          message: payload?.message || 'Failed to create account.',
+        }
+      }
+
+      return { ok: true, message: 'Account created.' }
+    } catch (error) {
+      console.log('Signup Exception: ', error)
+      return { ok: false, message: 'Cannot connect to server.' }
+    }
+  }
+
   return (
-    <UserContext.Provider value={{ user, login, logout }}>
+    <UserContext.Provider value={{ user, login, logout, signup }}>
       {children}
     </UserContext.Provider>
   )
